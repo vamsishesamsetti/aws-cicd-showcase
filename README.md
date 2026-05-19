@@ -270,3 +270,12 @@ curl -H "Authorization: Bearer $TOKEN" "$BASE/tasks?status=todo"
 | CI/CD | GitHub Actions |
 | Monitoring | CloudWatch (container logs) |
 | Rate Limiting | express-rate-limit |
+
+
+---
+
+## Author
+
+**Vamsi Shesamsetti** — Full-Stack Developer · Cloud Engineer · M.S. CS @ FAU (May 2026)
+
+🌐 [vamsishesamsetti.dev](https://vamsishesamsetti.dev) · 💼 [LinkedIn](https://linkedin.com/in/vamsishesamsetti) · 🐙 [GitHub](https://github.com/vamsishesamsetti) · ✉️ shesamsettivamsi11@gmail.com
