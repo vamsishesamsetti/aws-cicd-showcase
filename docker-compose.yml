@@ -1,4 +1,13 @@
 services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      API_URL: http://api:3000
+    depends_on:
+      - api
+
   api:
     build: .
     ports:
@@ -23,10 +32,10 @@ services:
       - "8000:8000"
     command: -jar DynamoDBLocal.jar -sharedDb -inMemory
     healthcheck:
-      test: ["CMD-SHELL", "curl -s http://localhost:8000/shell/ | grep -q DynamoDB || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8000' 2>/dev/null || exit 1"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
 
   # One-time table bootstrap — runs once then exits
   dynamodb-setup:
@@ -38,18 +47,10 @@ services:
       AWS_ACCESS_KEY_ID: local
       AWS_SECRET_ACCESS_KEY: local
       AWS_DEFAULT_REGION: us-east-1
-    entrypoint: >
-      /bin/sh -c "
-      aws dynamodb create-table --table-name cicd-users
-        --attribute-definitions AttributeName=userId,AttributeType=S AttributeName=email,AttributeType=S
-        --key-schema AttributeName=userId,KeyType=HASH
-        --global-secondary-indexes '[{\"IndexName\":\"email-index\",\"KeySchema\":[{\"AttributeName\":\"email\",\"KeyType\":\"HASH\"}],\"Projection\":{\"ProjectionType\":\"ALL\"},\"ProvisionedThroughput\":{\"ReadCapacityUnits\":5,\"WriteCapacityUnits\":5}}]'
-        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
-        --endpoint-url http://dynamodb-local:8000 &&
-      aws dynamodb create-table --table-name cicd-tasks
-        --attribute-definitions AttributeName=userId,AttributeType=S AttributeName=taskId,AttributeType=S
-        --key-schema AttributeName=userId,KeyType=HASH AttributeName=taskId,KeyType=RANGE
-        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5
-        --endpoint-url http://dynamodb-local:8000
-      "
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        aws dynamodb create-table --table-name cicd-users --attribute-definitions AttributeName=userId,AttributeType=S AttributeName=email,AttributeType=S --key-schema AttributeName=userId,KeyType=HASH --global-secondary-indexes '[{"IndexName":"email-index","KeySchema":[{"AttributeName":"email","KeyType":"HASH"}],"Projection":{"ProjectionType":"ALL"},"ProvisionedThroughput":{"ReadCapacityUnits":5,"WriteCapacityUnits":5}}]' --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --endpoint-url http://dynamodb-local:8000 &&
+        aws dynamodb create-table --table-name cicd-tasks --attribute-definitions AttributeName=userId,AttributeType=S AttributeName=taskId,AttributeType=S --key-schema AttributeName=userId,KeyType=HASH AttributeName=taskId,KeyType=RANGE --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 --endpoint-url http://dynamodb-local:8000
     restart: "no"
